@@ -4,7 +4,7 @@ A machine learning-powered application for predicting store sales using advanced
 --
 ## 🌐 Live Demo
 
-🚀 The project demo is live here: https://customer-churn-analysiss.streamlit.app/
+🚀 The project demo is live here: https://sales-forecasting-0007.streamlit.app/
 
 ---
 
