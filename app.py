@@ -149,13 +149,22 @@ def prepare_prediction_features(store_nbr, family, date_val, onpromotion,
         'rolling_mean_7': rolling_mean_7,
     }
 
-    # The model was trained with features:
-    # store_nbr, onpromotion, year, month, day, day_of_week, is_weekend,
-    # lag_1, lag_7, rolling_mean_7
-    # Note: 'family' was label-encoded during training. We need to handle it.
-    # Since the pkl model may have family encoding built in via the training pipeline,
-    # we include a family_encoded feature.
-    return pd.DataFrame([features])
+    # Initialize all family dummies to 0
+    for fam in PRODUCT_FAMILIES:
+        if fam != "AUTOMOTIVE":
+            features[f"family_{fam}"] = 0
+            
+    # Set the selected family to 1
+    if family != "AUTOMOTIVE" and family in PRODUCT_FAMILIES:
+        features[f"family_{family}"] = 1
+
+    expected_cols = [
+        'store_nbr', 'onpromotion', 'year', 'month', 'day', 'day_of_week', 'is_weekend', 
+        'lag_1', 'lag_7', 'rolling_mean_7'
+    ] + [f"family_{fam}" for fam in PRODUCT_FAMILIES if fam != "AUTOMOTIVE"]
+    
+    df = pd.DataFrame([features])
+    return df[expected_cols]
 
 
 # ========================
@@ -192,7 +201,7 @@ def main():
         page = st.radio(
             "Select Page:",
             ["🏠 Home", "🔮 Single Prediction", "📈 Batch Prediction",
-             "📊 Model Performance"],
+             "📊 Model Performance", "ℹ️ About"],
             label_visibility="collapsed"
         )
         st.markdown("---")
@@ -279,6 +288,7 @@ def main():
 
         with col1:
             store_nbr = st.number_input("🏪 Store Number", min_value=1, max_value=54, value=1, step=1)
+            family = st.selectbox("📦 Product Family", PRODUCT_FAMILIES, index=PRODUCT_FAMILIES.index("GROCERY I"))
             prediction_date = st.date_input("📅 Prediction Date",
                                             value=datetime(2017, 8, 16),
                                             min_value=datetime(2013, 1, 1),
@@ -296,7 +306,7 @@ def main():
                     # Prepare features
                     features_df = prepare_prediction_features(
                         store_nbr=store_nbr,
-                        family="GROCERY I",  # placeholder
+                        family=family,
                         date_val=prediction_date,
                         onpromotion=onpromotion,
                         lag_1=lag_1,
@@ -351,7 +361,7 @@ def main():
         st.markdown("""
         <div class="info-box">
         <strong>📋 Required CSV Columns:</strong><br>
-        <code>date</code>, <code>store_nbr</code>, <code>onpromotion</code>,
+        <code>date</code>, <code>store_nbr</code>, <code>family</code>, <code>onpromotion</code>,
         <code>lag_1</code>, <code>lag_7</code>, <code>rolling_mean_7</code>
         </div>
         """, unsafe_allow_html=True)
@@ -361,6 +371,8 @@ def main():
             sample_data = pd.DataFrame({
                 'date': pd.date_range('2017-08-16', periods=10),
                 'store_nbr': [1] * 10,
+                'family': ['GROCERY I', 'BEVERAGES', 'PRODUCE', 'CLEANING', 'DAIRY', 
+                           'BREAD/BAKERY', 'MEATS', 'POULTRY', 'DELI', 'PERSONAL CARE'],
                 'onpromotion': [0] * 10,
                 'lag_1': np.random.uniform(100, 1000, 10).round(2),
                 'lag_7': np.random.uniform(100, 1000, 10).round(2),
@@ -387,17 +399,27 @@ def main():
                         # Create features
                         df_features = create_features(df)
 
-                        # Select model features
-                        feature_cols = ['store_nbr', 'onpromotion', 'year', 'month',
-                                       'day', 'day_of_week', 'is_weekend',
-                                       'lag_1', 'lag_7', 'rolling_mean_7']
-
-                        missing_cols = [c for c in feature_cols if c not in df_features.columns]
-                        if missing_cols:
-                            st.error(f"❌ Missing columns: {', '.join(missing_cols)}")
+                        if 'family' not in df_features.columns:
+                            st.error("❌ Missing 'family' column in the uploaded CSV.")
                         else:
-                            X = df_features[feature_cols]
-                            predictions = model.predict(X)
+                            # One-hot encode family
+                            for fam in PRODUCT_FAMILIES:
+                                if fam != "AUTOMOTIVE":
+                                    df_features[f"family_{fam}"] = (df_features['family'] == fam).astype(int)
+
+                            # Select model features
+                            expected_cols = [
+                                'store_nbr', 'onpromotion', 'year', 'month',
+                                'day', 'day_of_week', 'is_weekend',
+                                'lag_1', 'lag_7', 'rolling_mean_7'
+                            ] + [f"family_{fam}" for fam in PRODUCT_FAMILIES if fam != "AUTOMOTIVE"]
+
+                            missing_cols = [c for c in expected_cols if c not in df_features.columns]
+                            if missing_cols:
+                                st.error(f"❌ Missing columns: {', '.join(missing_cols)}")
+                            else:
+                                X = df_features[expected_cols]
+                                predictions = model.predict(X)
                             predictions = np.maximum(0, predictions)
 
                             df_features['predicted_sales'] = predictions
@@ -473,6 +495,45 @@ def main():
         | Rolling Features | 7-day rolling mean |
         """)
 
+    # ========================
+    # About Page
+    # ========================
+    elif page == "ℹ️ About":
+        st.markdown("### ℹ️ About This Project")
+        st.markdown("""
+        #### 📌 Project Description
+        This project is a **Store Sales Time Series Forecasting** application that predicts
+        the sales for thousands of products across multiple stores.
+
+        #### 📊 Dataset
+        - **Source:** Kaggle - Store Sales Time Series Forecasting
+        - **Size:** ~3,000,888 rows × 6 columns
+        - **Time Period:** 2013-01-01 to 2017-08-15
+        - **Stores:** 54 stores
+        - **Product Families:** 33 categories
+
+        #### 🧠 Machine Learning Pipeline
+        1. **Data Loading & Cleaning** - Handle missing values, parse dates
+        2. **Feature Engineering** - Create temporal features, lag features, rolling statistics
+        3. **Model Training** - Train XGBoost and Prophet models
+        4. **Model Evaluation** - Compare using RMSE and MAE metrics
+        5. **Model Deployment** - Serve via Streamlit web application
+
+        #### 🛠️ Tech Stack
+        - **Python** - Core programming language
+        - **Pandas & NumPy** - Data manipulation
+        - **XGBoost** - Primary ML model
+        - **Scikit-learn** - Model evaluation metrics
+        - **Streamlit** - Web application framework
+        - **Plotly** - Interactive visualizations
+        - **Pickle** - Model serialization
+
+        #### 👨‍💻 Workflow
+        ```
+        Raw Data → Data Cleaning → Feature Engineering → Train/Test Split
+            → Model Training (XGBoost) → Evaluation → Deployment (Streamlit)
+        ```
+        """)
 
 
 if __name__ == "__main__":
