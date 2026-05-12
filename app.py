@@ -429,45 +429,34 @@ def main():
     # Model Performance
     # ========================
     elif page == "📊 Model Performance":
-        st.markdown("### 📊 Model Performance & Comparison")
-
-        # Model comparison
-        comparison_data = pd.DataFrame({
-            'Model': ['XGBoost (Regression)', 'Prophet (Time Series)'],
-            'RMSE': [364.78, 177944.26],
-            'MAE': [114.02, 136023.41]
-        })
+        st.markdown("### 📊 Model Performance")
 
         col1, col2 = st.columns(2)
 
         with col1:
-            fig_rmse = px.bar(comparison_data, x='Model', y='RMSE',
-                             title='📊 RMSE Comparison (Lower is Better)',
-                             color='Model', text='RMSE',
-                             color_discrete_sequence=['#1E88E5', '#E53935'])
-            fig_rmse.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-            fig_rmse.update_layout(template='plotly_white', showlegend=False)
-            st.plotly_chart(fig_rmse, width='stretch')
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">364.78</div>
+                <div class="metric-label">RMSE (Root Mean Squared Error)</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         with col2:
-            fig_mae = px.bar(comparison_data, x='Model', y='MAE',
-                            title='📊 MAE Comparison (Lower is Better)',
-                            color='Model', text='MAE',
-                            color_discrete_sequence=['#1E88E5', '#E53935'])
-            fig_mae.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-            fig_mae.update_layout(template='plotly_white', showlegend=False)
-            st.plotly_chart(fig_mae, width='stretch')
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">114.02</div>
+                <div class="metric-label">MAE (Mean Absolute Error)</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("---")
-        st.dataframe(comparison_data, width='stretch')
 
         st.markdown("""
         <div class="success-box">
-        <strong>✅ XGBoost is the clear winner!</strong><br>
-        XGBoost outperforms Prophet by a massive margin on both RMSE and MAE metrics.
-        The XGBoost model benefits from tabular feature engineering (lag features,
-        rolling means, temporal features) which capture the underlying sales patterns
-        much more effectively.
+        <strong>✅ XGBoost Performance</strong><br>
+        The XGBoost model successfully captures the complex, non-linear relationships in store sales.
+        It benefits heavily from tabular feature engineering (lag features, rolling means, temporal features) 
+        which identify the underlying sales patterns at a highly granular store-family level.
         </div>
         """, unsafe_allow_html=True)
 
