@@ -213,7 +213,7 @@ def main():
         st.markdown("### 📊 Navigation")
         page = st.radio(
             "Select Page:",
-            ["🏠 Home", "🔮 Single Prediction", "📈 Batch Prediction"],
+            ["🏠 Home", "🔮 Single Prediction"],
             label_visibility="collapsed"
         )
 
