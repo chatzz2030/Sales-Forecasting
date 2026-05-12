@@ -115,6 +115,19 @@ def load_model():
         st.error(f"❌ Error loading model: {str(e)}")
         st.stop()
 
+@st.cache_data
+def load_stores():
+    """Load store metadata for user-friendly dropdowns."""
+    stores_path = os.path.join(os.path.dirname(__file__), "store-sales-time-series-forecasting", "stores.csv")
+    try:
+        stores_df = pd.read_csv(stores_path)
+        stores_df['display_name'] = stores_df.apply(
+            lambda x: f"Store #{x['store_nbr']} ({x['city']}, {x['state']})", axis=1
+        )
+        return dict(zip(stores_df['display_name'], stores_df['store_nbr']))
+    except Exception:
+        return {f"Store #{i}": i for i in range(1, 55)}
+
 
 # ========================
 # Feature Engineering
@@ -200,7 +213,8 @@ def main():
         st.markdown("### 📊 Navigation")
         page = st.radio(
             "Select Page:",
-            ["🏠 Home", "🔮 Single Prediction", "📈 Batch Prediction"],
+            ["🏠 Home", "🔮 Single Prediction", "📈 Batch Prediction",
+             "📊 Model Performance", "ℹ️ About"],
             label_visibility="collapsed"
         )
         st.markdown("---")
@@ -286,7 +300,10 @@ def main():
         col1, col2 = st.columns(2)
 
         with col1:
-            store_nbr = st.number_input("🏪 Store Number", min_value=1, max_value=54, value=1, step=1)
+            stores_dict = load_stores()
+            store_display = st.selectbox("🏪 Select Store Location", list(stores_dict.keys()))
+            store_nbr = stores_dict[store_display]
+            
             family = st.selectbox("📦 Product Family", PRODUCT_FAMILIES, index=PRODUCT_FAMILIES.index("GROCERY I"))
             prediction_date = st.date_input("📅 Prediction Date",
                                             value=datetime(2017, 8, 16),
@@ -359,9 +376,13 @@ def main():
 
         st.markdown("""
         <div class="info-box">
-        <strong>📋 Required CSV Columns:</strong><br>
-        <code>date</code>, <code>store_nbr</code>, <code>family</code>, <code>onpromotion</code>,
-        <code>lag_1</code>, <code>lag_7</code>, <code>rolling_mean_7</code>
+        <strong>📋 How to format your Batch Prediction CSV:</strong><br>
+        To run a bulk prediction, your uploaded CSV must contain these exact columns:<br><br>
+        • <code>date</code>: The date to predict (e.g., 2017-08-16)<br>
+        • <code>store_nbr</code>: The ID of the store (1 to 54)<br>
+        • <code>family</code>: The product category (e.g., GROCERY I)<br>
+        • <code>onpromotion</code>: Number of items on promotion that day<br>
+        • <code>lag_1</code>, <code>lag_7</code>, <code>rolling_mean_7</code>: Historical sales features (calculated from your database)<br>
         </div>
         """, unsafe_allow_html=True)
 
@@ -446,7 +467,93 @@ def main():
             except Exception as e:
                 st.error(f"❌ Error processing file: {str(e)}")
 
-   
+    # ========================
+    # Model Performance
+    # ========================
+    elif page == "📊 Model Performance":
+        st.markdown("### 📊 Model Performance")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">364.78</div>
+                <div class="metric-label">RMSE (Root Mean Squared Error)</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">114.02</div>
+                <div class="metric-label">MAE (Mean Absolute Error)</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        st.markdown("""
+        <div class="success-box">
+        <strong>✅ XGBoost Performance</strong><br>
+        The XGBoost model successfully captures the complex, non-linear relationships in store sales.
+        It benefits heavily from tabular feature engineering (lag features, rolling means, temporal features) 
+        which identify the underlying sales patterns at a highly granular store-family level.
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("### 🔑 Key Model Details")
+        st.markdown("""
+        | Parameter | Value |
+        |-----------|-------|
+        | Algorithm | XGBoost Regressor |
+        | Training Data Size | ~3,000,000 rows |
+        | Number of Features | 10 |
+        | Target Variable | Sales |
+        | Seasonality Mode | Handled via feature engineering |
+        | Lag Features | 1-day lag, 7-day lag |
+        | Rolling Features | 7-day rolling mean |
+        """)
+
+    # ========================
+    # About Page
+    # ========================
+    elif page == "ℹ️ About":
+        st.markdown("### ℹ️ About This Project")
+        st.markdown("""
+        #### 📌 Project Description
+        This project is a **Store Sales Time Series Forecasting** application that predicts
+        the sales for thousands of products across multiple stores.
+
+        #### 📊 Dataset
+        - **Source:** Kaggle - Store Sales Time Series Forecasting
+        - **Size:** ~3,000,888 rows × 6 columns
+        - **Time Period:** 2013-01-01 to 2017-08-15
+        - **Stores:** 54 stores
+        - **Product Families:** 33 categories
+
+        #### 🧠 Machine Learning Pipeline
+        1. **Data Loading & Cleaning** - Handle missing values, parse dates
+        2. **Feature Engineering** - Create temporal features, lag features, rolling statistics
+        3. **Model Training** - Train XGBoost and Prophet models
+        4. **Model Evaluation** - Compare using RMSE and MAE metrics
+        5. **Model Deployment** - Serve via Streamlit web application
+
+        #### 🛠️ Tech Stack
+        - **Python** - Core programming language
+        - **Pandas & NumPy** - Data manipulation
+        - **XGBoost** - Primary ML model
+        - **Scikit-learn** - Model evaluation metrics
+        - **Streamlit** - Web application framework
+        - **Plotly** - Interactive visualizations
+        - **Pickle** - Model serialization
+
+        #### 👨‍💻 Workflow
+        ```
+        Raw Data → Data Cleaning → Feature Engineering → Train/Test Split
+            → Model Training (XGBoost) → Evaluation → Deployment (Streamlit)
+        ```
+        """)
 
 
 if __name__ == "__main__":
