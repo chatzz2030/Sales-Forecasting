@@ -200,8 +200,7 @@ def main():
         st.markdown("### 📊 Navigation")
         page = st.radio(
             "Select Page:",
-            ["🏠 Home", "🔮 Single Prediction", "📈 Batch Prediction",
-             "📊 Model Performance", "ℹ️ About"],
+            ["🏠 Home", "🔮 Single Prediction", "📈 Batch Prediction"],
             label_visibility="collapsed"
         )
         st.markdown("---")
