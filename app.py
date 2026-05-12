@@ -473,45 +473,6 @@ def main():
         | Rolling Features | 7-day rolling mean |
         """)
 
-    # ========================
-    # About Page
-    # ========================
-    elif page == "ℹ️ About":
-        st.markdown("### ℹ️ About This Project")
-        st.markdown("""
-        #### 📌 Project Description
-        This project is a **Store Sales Time Series Forecasting** application that predicts
-        the sales for thousands of products across multiple stores.
-
-        #### 📊 Dataset
-        - **Source:** Kaggle - Store Sales Time Series Forecasting
-        - **Size:** ~3,000,888 rows × 6 columns
-        - **Time Period:** 2013-01-01 to 2017-08-15
-        - **Stores:** 54 stores
-        - **Product Families:** 33 categories
-
-        #### 🧠 Machine Learning Pipeline
-        1. **Data Loading & Cleaning** - Handle missing values, parse dates
-        2. **Feature Engineering** - Create temporal features, lag features, rolling statistics
-        3. **Model Training** - Train XGBoost and Prophet models
-        4. **Model Evaluation** - Compare using RMSE and MAE metrics
-        5. **Model Deployment** - Serve via Streamlit web application
-
-        #### 🛠️ Tech Stack
-        - **Python** - Core programming language
-        - **Pandas & NumPy** - Data manipulation
-        - **XGBoost** - Primary ML model
-        - **Scikit-learn** - Model evaluation metrics
-        - **Streamlit** - Web application framework
-        - **Plotly** - Interactive visualizations
-        - **Pickle** - Model serialization
-
-        #### 👨‍💻 Workflow
-        ```
-        Raw Data → Data Cleaning → Feature Engineering → Train/Test Split
-            → Model Training (XGBoost) → Evaluation → Deployment (Streamlit)
-        ```
-        """)
 
 
 if __name__ == "__main__":
