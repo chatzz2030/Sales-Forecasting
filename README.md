@@ -1,6 +1,12 @@
 # 🛒 Store Sales Demand Forecasting
 
 A machine learning-powered application for predicting store sales using advanced time-series forecasting techniques and an **XGBoost regression model**, deployed with an interactive **Streamlit** dashboard.
+--
+## 🌐 Live Demo
+
+🚀 The project demo is live here: https://customer-churn-analysiss.streamlit.app/
+
+---
 
 ## 🌟 Key Features
 
